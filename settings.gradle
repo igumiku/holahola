@@ -1,1 +1,1 @@
-include ':plugin', ':app'
+include ':plugin', ':app', ':runtime-no-op', ':runtime'
