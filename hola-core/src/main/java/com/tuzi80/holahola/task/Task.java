@@ -59,7 +59,7 @@ public abstract class Task {
     }
 
 
-    private void addChildTask(Task task) {
+    public void addChildTask(Task task) {
         if (!mChildTask.contains(task)) {
             mChildTask.add(task);
             task.addParentTask(this);

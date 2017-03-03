@@ -2,9 +2,10 @@ package com.tuzi80.holahola.builder;
 
 import com.tuzi80.holahola.model.HolaProjectDescription;
 import com.tuzi80.holahola.model.ProjectInfo;
+import com.tuzi80.holahola.task.*;
 import com.tuzi80.holahola.task.clean.GradleCleanBuildTask;
-import com.tuzi80.holahola.task.Task;
-import com.tuzi80.holahola.task.TaskEngine;
+
+import java.util.HashSet;
 
 /**
  * Gradle clean builder.
@@ -13,12 +14,15 @@ import com.tuzi80.holahola.task.TaskEngine;
 public class GradleCleanBuilder extends CleanBuilder {
     private boolean mWaitForDebug = false;
     private ProjectInfo mProjectInfo;
+    private TaskEngine mTaskEngine;
+    private HashSet<Task> mRootTask=new HashSet<Task>();
 
     public void init(String builderName, HolaProjectDescription description, TaskEngine engine
             , ProjectInfo projectInfo, boolean waitForDebug) {
         super.init("gradle_clean_builder", description, engine);
         mWaitForDebug = waitForDebug;
         mProjectInfo = projectInfo;
+        mTaskEngine = engine;
     }
 
     public void checkBuildEnvironment() {
@@ -44,29 +48,38 @@ public class GradleCleanBuilder extends CleanBuilder {
 //        3. install / clean cache
 //        4. build base res / generate project info cache
         Task buildTask = new GradleCleanBuildTask();
-        install_task = InstallApkTask(self._adb, self._config, wait_for_debugger=self._wait_for_debugger)
-        clean_all_cache_task = CleanAllCacheTask(self._config['build_cache_dir'], ignore=[
-                'stat_cache.json', 'apktime', 'jar_dependencies.json', 'resources_dependencies.json', 'public_keeper.xml',
-                'assets_dependencies.json', 'freeline_annotation_info.json'])
-        build_base_resource_task = BuildBaseResourceTask(self._config, self._project_info)
-        generate_stat_task = GenerateFileStatTask(self._config)
-        append_stat_task = GenerateFileStatTask(self._config, is_append=True)
-        read_project_info_task = GradleReadProjectInfoTask()
-        generate_project_info_task = GradleGenerateProjectInfoTask(self._config)
-        generate_apt_file_stat_task = GenerateAptFilesStatTask()
+        InstallApkTask installTask = new InstallApkTask(Builder.getAdb(mDescription), mWaitForDebug);
+        String[] ignores = {"stat_cache.json"
+                , "apktime", "jar_dependencies.json", "resources_dependencies.json", "public_keeper.xml",
+                "assets_dependencies.json", "freeline_annotation_info.json"};
+        CleanAllCacheTask cleanAllCacheTask = new CleanAllCacheTask(mDescription.getBuild_cache_dir(), ignores);
 
-        # generate_stat_task.add_child_task(read_project_info_task)
-        build_task.add_child_task(clean_all_cache_task)
-        build_task.add_child_task(install_task)
-        clean_all_cache_task.add_child_task(build_base_resource_task)#资源基线包，用于资源增量更新
-        clean_all_cache_task.add_child_task(generate_project_info_task)
-        clean_all_cache_task.add_child_task(append_stat_task)#更新
-        clean_all_cache_task.add_child_task(generate_apt_file_stat_task)
-        read_project_info_task.add_child_task(build_task)
-        self._root_task = [generate_stat_task, read_project_info_task]
+        BuildBaseResourceTask buildBaseResourceTask = new BuildBaseResourceTask();
+        GenerateFileStatTask generateStatTask = new GenerateFileStatTask(false);
+//        append_stat_task = GenerateFileStatTask(self._config, is_append = True)
+        GradleReadProjectInfoTask readProjectInfoTask = new GradleReadProjectInfoTask();
+        GradleGenerateProjectInfoTask generateProjectnfoTask = new GradleGenerateProjectInfoTask();
+        GenerateAptFilesStatTask generateAptFileStatTask = new GenerateAptFilesStatTask();
+
+        //generate_stat_task.add_child_task(read_project_info_task)
+        buildTask.addChildTask(cleanAllCacheTask);
+        buildTask.addChildTask(installTask);
+        cleanAllCacheTask.addChildTask(buildBaseResourceTask);//资源基线包，用于资源增量更新
+        cleanAllCacheTask.addChildTask(generateProjectnfoTask);
+//        clean_all_cache_task.add_child_task(append_stat_task)#更新
+        cleanAllCacheTask.addChildTask(generateAptFileStatTask);
+        readProjectInfoTask.addChildTask(buildTask);
+
+        mRootTask.add(generateStatTask);
+        mRootTask.add(readProjectInfoTask);
     }
 
     public void cleanBuild() {
-
+        mTaskEngine.addRootTask(mRootTask);
+        try {
+            mTaskEngine.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

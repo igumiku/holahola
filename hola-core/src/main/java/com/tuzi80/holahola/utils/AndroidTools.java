@@ -25,9 +25,9 @@ public class AndroidTools {
         cmd.append(adbPath);
         cmd.append(" shell");
         cmd.append("getprop ro.build.version.sdk");
-        String output = ExecScriptUtils.exec(cmd.toString());
-        if (!CommonUtil.isEmpty(output)) {
-            return Integer.parseInt(output);
+        ScriptResult output = ExecScriptUtils.exec(cmd.toString());
+        if (!CommonUtil.isEmpty(output.getOutput())) {
+            return Integer.parseInt(output.getOutput());
         }
         return sdkVersion;
     }
@@ -63,5 +63,4 @@ public class AndroidTools {
         }
         return "";
     }
-
 }

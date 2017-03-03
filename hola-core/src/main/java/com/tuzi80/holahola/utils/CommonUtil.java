@@ -1,6 +1,8 @@
 package com.tuzi80.holahola.utils;
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 /**
  * Common util.
@@ -42,11 +44,40 @@ public class CommonUtil {
         return file.isFile();
     }
 
+    public static boolean isDir(String path) {
+        File file = new File(path);
+        return file.isDirectory();
+    }
+
     public static void mkdir(String path) {
         File file = new File(path);
         if (!file.exists()) {
             file.mkdir();
         }
+    }
+
+    public static void deleteFile(String path){
+        File file=new File(path);
+        if(file.exists()){
+            file.delete();
+        }
+    }
+
+    public static ArrayList<String> getallFile(File dir) {
+        ArrayList<String> paths = new ArrayList<String>();
+        if (dir.isDirectory()) {
+            for (File file : dir.listFiles()) {
+                if (file.isDirectory()) {
+                    for (String sub : getallFile(file)) {
+                        paths.add(Paths.get(file.getName(), sub).toString());
+                    }
+                } else {
+                    paths.add(file.getName());
+                }
+            }
+        }
+
+        return paths;
     }
 
     @SuppressWarnings("Since15")

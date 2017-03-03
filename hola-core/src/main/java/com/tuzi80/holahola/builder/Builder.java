@@ -31,7 +31,7 @@ public abstract class Builder {
         mTaskEngine = engine;
     }
 
-    public String getAndroidSdkDir(HolaProjectDescription description) {
+    public static String getAndroidSdkDir(HolaProjectDescription description) {
         String sdkDir = description.getSdk_directory();
         if (!CommonUtil.isEmpty(sdkDir)) {
             return sdkDir;
@@ -55,7 +55,7 @@ public abstract class Builder {
         return null;
     }
 
-    public String getAdb(HolaProjectDescription description) {
+    public static String getAdb(HolaProjectDescription description) {
         String sdkDir = getAndroidSdkDir(description);
         String adbExeName = CommonUtil.isWindows() ? "adb.exe" : "adb";
         Path path = Paths.get(sdkDir, "platform-tools", adbExeName);
